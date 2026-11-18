@@ -148,6 +148,9 @@ function parseVlessUrl(url) {
             uuid,
         };
 
+        const vlessEnc = params.get('encryption');
+        if (vlessEnc && vlessEnc !== 'none') proxy.encryption = vlessEnc;
+
         // 网络类型
         const network = params.get('type') || 'tcp';
         if (network !== 'tcp') {
