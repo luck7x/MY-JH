@@ -227,18 +227,21 @@ export function renderClashFromTemplateModel(model) {
         };
     });
 
+    const dnsConfig = resolveSafeDnsConfig(normalizedModel.settings?.customDnsOverride, {
+        mode: normalizedModel.settings?.dnsMode,
+        proxyGroup: DNS_PROXY_GROUP,
+    });
+
     const config = {
         'mixed-port': 7890,
         'allow-lan': false,
         'bind-address': '127.0.0.1',
-        ipv6: false,
+        // [修复] 顶层 ipv6 跟随 dns.ipv6（customDnsOverride 写了 ipv6: true 才启用）
+        ipv6: dnsConfig.ipv6 === true,
         mode: 'rule',
         'log-level': 'info',
         'external-controller': '127.0.0.1:9090',
-        dns: resolveSafeDnsConfig(normalizedModel.settings?.customDnsOverride, {
-            mode: normalizedModel.settings?.dnsMode,
-            proxyGroup: DNS_PROXY_GROUP,
-        }),
+        dns: dnsConfig,
         proxies: normalizedModel.proxies,
         'proxy-groups': normalizedModel.groups
             .filter(
