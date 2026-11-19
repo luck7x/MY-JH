@@ -123,6 +123,15 @@ function parseAclProxyGroupLine(line) {
             members.push(part.slice(2));
             continue;
         }
+        // 扩展标记：--hidden / --lazy，解析为组选项，由渲染器的 ...group.options 原样展开。
+        if (/^--hidden$/i.test(part)) {
+            options.hidden = true;
+            continue;
+        }
+        if (/^--lazy$/i.test(part)) {
+            options.lazy = true;
+            continue;
+        }
         if (/^https?:\/\//i.test(part)) {
             options.url = part;
             continue;
