@@ -223,7 +223,8 @@ export function generateBuiltinClashConfig(nodeList, options = {}) {
             'mixed-port': 7890,
             'allow-lan': false,
             'bind-address': '127.0.0.1',
-            ipv6: false,
+            // [修复] 顶层 ipv6 跟随 dns.ipv6：仅当 customDnsOverride 显式写 ipv6: true 才启用，默认仍 false
+            ipv6: dnsConfig.ipv6 === true,
             mode: 'rule',
             'log-level': 'info',
             'external-controller': '127.0.0.1:9090',
