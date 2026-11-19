@@ -881,6 +881,15 @@ export function extractNodeRegion(nodeName) {
 
     const normalizedNodeName = nodeName.toLowerCase();
 
+    // [修复] 同一名字可能命中多个国家（如“白俄罗斯”含“俄罗斯”、“罗马尼亚”含“罗马”），
+    // 取「命中关键词最长」的那一个，避免短关键词抢先导致国旗错乱
+    let bestMatch = null;
+    const considerRegion = (region, keyword) => {
+        if (!bestMatch || keyword.length > bestMatch.len) {
+            bestMatch = { region, len: keyword.length };
+        }
+    };
+
     // 遍历所有地区关键词
     for (const [regionName, keywords] of Object.entries(REGION_KEYWORDS)) {
         for (const keyword of keywords) {
@@ -902,19 +911,19 @@ export function extractNodeRegion(nodeName) {
 
                     // 只有当前后都不是字母时才匹配
                     if (!isLetterBefore && !isLetterAfter) {
-                        return regionName;
+                        considerRegion(regionName, lowerKeyword);
                     }
                 }
             } else {
                 // 对于长关键词或中文，直接使用 includes
                 if (normalizedNodeName.includes(lowerKeyword)) {
-                    return regionName;
+                    considerRegion(regionName, lowerKeyword);
                 }
             }
         }
     }
 
-    return '其他';
+    return bestMatch ? bestMatch.region : '其他';
 }
 
 /**
