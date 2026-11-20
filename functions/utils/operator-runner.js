@@ -306,8 +306,10 @@ export async function runOperatorChain(nodeUrls, operators, context = {}) {
                 const includeProtocol = params?.includeProtocol !== false;
                 const seenNodes = new Map();
                 for (const r of records) {
+                    // [链式落地节点保护] 动态住宅/链式节点以名称为唯一键，绝不误去重
+                    const isLanding = r.name && (r.name.includes('🔗 落地') || r.name.includes('链式落地'));
                     const hostPort = `${r.server}:${r.port}`;
-                    const key = includeProtocol ? `${r.protocol}|${hostPort}` : hostPort;
+                    const key = isLanding ? `landing|${r.name}` : (includeProtocol ? `${r.protocol}|${hostPort}` : hostPort);
                     if (!seenNodes.has(key)) {
                         seenNodes.set(key, r);
                     } else {
