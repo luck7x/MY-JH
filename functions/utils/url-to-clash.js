@@ -1073,7 +1073,10 @@ function parseWireguardUrl(url) {
 
             const ipv6 = addresses.find((a) => a.includes(':'));
 
-            if (addresses.length > 0) proxy.ip = addresses;
+            // mihomo 的 proxy.ip 必须是字符串，数组会报
+            // "proxy N: 'ip' expected type 'string', got unconvertible type '[]interface {}'"。
+            // 单地址直接取首项；多地址用逗号拼接（mihomo 支持 CIDR 逗号列表）。
+            if (addresses.length > 0) proxy.ip = addresses.join(',');
             if (ipv6) proxy.ipv6 = ipv6;
         }
 
