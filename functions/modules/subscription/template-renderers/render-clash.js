@@ -241,6 +241,23 @@ export function renderClashFromTemplateModel(model) {
         });
     }
 
+    // [链式落地节点自动绑定 dialer-proxy]
+    // 凡是名字包含 "🔗 落地" 或 "链式落地" 的节点，自动注入 dialer-proxy: "🚪 落地前置"
+    if (Array.isArray(normalizedModel.proxies)) {
+        normalizedModel.proxies.forEach((p) => {
+            if (
+                p &&
+                typeof p === 'object' &&
+                p.name &&
+                (p.name.includes('🔗 落地') || p.name.includes('链式落地'))
+            ) {
+                if (!p['dialer-proxy']) {
+                    p['dialer-proxy'] = '🚪 落地前置';
+                }
+            }
+        });
+    }
+
     const config = {
         'mixed-port': 7890,
         'allow-lan': false,
