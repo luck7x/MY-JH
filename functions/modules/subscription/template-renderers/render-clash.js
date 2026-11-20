@@ -232,6 +232,15 @@ export function renderClashFromTemplateModel(model) {
         proxyGroup: DNS_PROXY_GROUP,
     });
 
+    // [内置增强] 注入节点级 IPv6 优先（当开启 IPv6 时）：
+    if (dnsConfig.ipv6 === true && Array.isArray(normalizedModel.proxies)) {
+        normalizedModel.proxies.forEach((p) => {
+            if (p && typeof p === 'object' && !p['ip-version']) {
+                p['ip-version'] = 'ipv6-prefer';
+            }
+        });
+    }
+
     const config = {
         'mixed-port': 7890,
         'allow-lan': false,
@@ -241,6 +250,17 @@ export function renderClashFromTemplateModel(model) {
         mode: 'rule',
         'log-level': 'info',
         'external-controller': '127.0.0.1:9090',
+        'unified-delay': true,
+        'tcp-concurrent': true,
+        sniffer: {
+            enable: true,
+            sniff: {
+                TLS: { ports: [443, 8443] },
+                HTTP: { ports: [80, 8080, 8880], 'override-destination': true },
+                QUIC: { ports: [443, 8443] },
+            },
+            'skip-domain': ['Mijia Cloud'],
+        },
         dns: dnsConfig,
         proxies: normalizedModel.proxies,
         'proxy-groups': normalizedModel.groups
@@ -275,6 +295,7 @@ export function renderClashFromTemplateModel(model) {
             .filter(Boolean),
         profile: {
             'store-selected': true,
+            'store-fake-ip': true,
             'subscription-url': normalizedModel.settings.managedConfigUrl || '',
         },
     };
