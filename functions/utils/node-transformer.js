@@ -515,6 +515,10 @@ function evaluateScriptExpression(record, expression) {
 }
 
 function makeDedupKey(record, cfg) {
+    // [链式落地节点保护] 动态住宅/链式节点即使 server:port 相同，不同 session 也是独立线路，绝不误去重
+    if (record.name && (record.name.includes('🔗 落地') || record.name.includes('链式落地'))) {
+        return `landing|${record.name}`;
+    }
     const server = String(record.server || '')
         .trim()
         .toLowerCase();
