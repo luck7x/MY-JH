@@ -24,7 +24,12 @@ function resolveGroupFilters(model) {
 
             try {
                 const regex = new RegExp(filter, 'i');
+                const isFrontOrRegionGroup = group.name !== '🔗 链式落地' && group.name !== '代理分组' && group.name !== '漏网之鱼' && group.name !== 'AI';
                 proxyNames.forEach((name) => {
+                    // [极速防死锁] 凡是链式落地节点，物理级排除在普通地区组与前置跳板组之外，无需复杂的正则负向回溯
+                    if (isFrontOrRegionGroup && (name.includes('🔗') || name.includes('链式落地'))) {
+                        return;
+                    }
                     if (regex.test(name)) {
                         currentMembers.add(name);
                     }
