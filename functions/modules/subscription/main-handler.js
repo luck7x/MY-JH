@@ -277,7 +277,8 @@ export function resolveTemplateUrl(mode, value, fallbackUrl = '') {
     const normalizedFallback = typeof fallbackUrl === 'string' ? fallbackUrl.trim() : '';
 
     if (normalizedMode === 'builtin') return '';
-    if (normalizedMode === 'global') return normalizedFallback;
+    // 未显式指定或指定为 global 时，均回退继承全局模板 URL，避免落入空模板导致二次注入内置策略组造成 1102 CPU 超时
+    if (!normalizedMode || normalizedMode === 'global') return normalizedFallback;
     if (normalizedMode === 'custom_template') {
         return normalizedValue.startsWith('custom:') ? normalizedValue : '';
     }
