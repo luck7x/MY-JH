@@ -1071,12 +1071,12 @@ function parseWireguardUrl(url) {
                 .map((a) => a.trim())
                 .filter(Boolean);
 
+            // mihomo 的 wireguard: ip 必须是单条合法 IPv4 字符串，ipv6 必须是单条合法 IPv6 字符串
+            // 绝不能逗号拼在一起，否则 Go 的 netip.ParsePrefix 遇到逗号直接报错崩掉整个订阅
+            const ipv4 = addresses.find((a) => !a.includes(':')) || (addresses[0] && !addresses[0].includes(':') ? addresses[0] : null);
             const ipv6 = addresses.find((a) => a.includes(':'));
 
-            // mihomo 的 proxy.ip 必须是字符串，数组会报
-            // "proxy N: 'ip' expected type 'string', got unconvertible type '[]interface {}'"。
-            // 单地址直接取首项；多地址用逗号拼接（mihomo 支持 CIDR 逗号列表）。
-            if (addresses.length > 0) proxy.ip = addresses.join(',');
+            if (ipv4) proxy.ip = ipv4;
             if (ipv6) proxy.ipv6 = ipv6;
         }
 
