@@ -60,10 +60,19 @@ function parseRuleLine(line) {
         .filter(Boolean);
     if (parts.length < 2) return null;
 
+    const type = parts[0].toLowerCase();
+    let value = parts.length > 2 ? parts[1] : '';
+    const policy = parts.length > 2 ? parts[2] : parts[1];
+    const isRemoteRuleSet = type === 'rule-set' && /^https?:\/\//i.test(value);
+    if (isRemoteRuleSet) {
+        value = pinRemoteRuleUrl(value);
+    }
+
     return {
-        type: parts[0].toLowerCase(),
-        value: parts.length > 2 ? parts[1] : '',
-        policy: parts.length > 2 ? parts[2] : parts[1],
+        type,
+        value,
+        policy,
+        source: isRemoteRuleSet ? 'remote' : 'inline',
         extras: parts.length > 3 ? parts.slice(3) : [],
     };
 }
