@@ -40,6 +40,25 @@ function resolveGroupFilters(model) {
         });
 
         group.members = Array.from(currentMembers);
+
+        // [防误触自动测速] 若当前是地区选择组，且首位是「· 自动」测速子组：
+        // 将第 1 个具体静态节点置顶为 Index 0（默认激活静态节点，彻底避免一进入就触发并发测速）
+        // 将「· 自动」置为 Index 1（第 2 位，展开即清晰可见，触手可及，需自动选优时可主动勾选）
+        if (group.type === 'select' && group.members.length > 1) {
+            const autoIdx = group.members.findIndex((m) => m.includes('· 自动') || m.includes('自动'));
+            if (autoIdx === 0) {
+                const firstNodeIdx = group.members.findIndex(
+                    (m, i) => i > 0 && !m.includes('自动') && !m.includes('选优') && !m.includes('故障转移')
+                );
+                if (firstNodeIdx !== -1) {
+                    const firstNode = group.members[firstNodeIdx];
+                    const autoItem = group.members[0];
+                    group.members.splice(firstNodeIdx, 1);
+                    group.members.splice(0, 1);
+                    group.members.unshift(firstNode, autoItem);
+                }
+            }
+        }
     });
 }
 
