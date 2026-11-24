@@ -1481,9 +1481,10 @@ export async function handleMisubRequest(context) {
                 'X-MiSub-Mode': `builtin-${targetFormat}`,
             });
 
+            // [强制自动更新] 向所有客户端强制下发 6 小时自动更新响应头，保障早7点至凌晨2点活跃期随时自动刷新
+            responseHeaders.set('Profile-Update-Interval', '6');
             if (userInfoHeader) {
                 responseHeaders.set('Subscription-Userinfo', userInfoHeader);
-                responseHeaders.set('Profile-Update-Interval', String(config.UpdateInterval || 24));
             }
 
             Object.entries(resultHeaders).forEach(([k, v]) => responseHeaders.set(k, v));
