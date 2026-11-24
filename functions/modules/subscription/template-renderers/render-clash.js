@@ -94,6 +94,11 @@ function toClashRuleProviderUrl(sourceUrl) {
 
         const owner = pathParts[0] || '';
         const repo = pathParts[1] || '';
+        if (isGithubRaw && owner.toLowerCase() === 'metacubex' && repo.toLowerCase() === 'meta-rules-dat') {
+            const ref = pathParts[2] || 'meta';
+            const restPath = pathParts.slice(3).join('/');
+            return `https://fastly.jsdelivr.net/gh/${owner}/${repo}@${ref}/${restPath}`;
+        }
         if (owner.toLowerCase() !== 'acl4ssr' || repo.toLowerCase() !== 'acl4ssr') return sourceUrl;
 
         // 统一以「仓库内路径」为基准判断与改写，避免镜像前缀干扰
@@ -195,7 +200,10 @@ export function renderClashFromTemplateModel(model) {
         if (type !== 'RULE-SET' || !rule.value || !/^https?:\/\//i.test(rule.value)) return;
 
         const providerUrl = toClashRuleProviderUrl(rule.value);
-        if (ruleProviderMap.has(providerUrl)) return;
+        if (ruleProviderMap.has(providerUrl)) {
+            ruleProviderMap.set(rule.value, ruleProviderMap.get(providerUrl));
+            return;
+        }
 
         let nameHint = 'rs';
         try {
@@ -214,6 +222,7 @@ export function renderClashFromTemplateModel(model) {
 
         const providerName = `${nameHint}_${providerCounter++}`;
         ruleProviderMap.set(providerUrl, providerName);
+        ruleProviderMap.set(rule.value, providerName);
         const usesTextList = /\.(list|txt)$/i.test(providerUrl);
         const usesMrs = isMrsProviderUrl(providerUrl);
         ruleProviders[providerName] = {
