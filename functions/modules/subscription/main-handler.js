@@ -1193,9 +1193,9 @@ export async function handleMisubRequest(context) {
             'Cache-Control': 'no-store, no-cache',
             'X-MiSub-Mode': 'node-export-plain',
         };
+        nodeHeaders['Profile-Update-Interval'] = '6';
         if (userInfoHeader) {
             nodeHeaders['Subscription-Userinfo'] = userInfoHeader;
-            nodeHeaders['Profile-Update-Interval'] = String(config.UpdateInterval || 24);
         }
         // [兼容性优化] 第三方转换后端对明文列表的支持通常比 Base64 更好。
         // 同时对于 Cloudflare 而言，明文输出更有利于其边缘节点的流式处理。
@@ -1265,12 +1265,9 @@ export async function handleMisubRequest(context) {
                         'Cache-Control': 'no-store, no-cache',
                         'X-MiSub-Mode': 'local-clash-yaml-profile-template',
                     });
+                    responseHeaders.set('Profile-Update-Interval', '6');
                     if (userInfoHeader) {
                         responseHeaders.set('Subscription-Userinfo', userInfoHeader);
-                        responseHeaders.set(
-                            'Profile-Update-Interval',
-                            String(config.UpdateInterval || 24)
-                        );
                     }
                     Object.entries(rendered.headers || {}).forEach(([key, value]) =>
                         responseHeaders.set(key, value)
@@ -1346,6 +1343,7 @@ export async function handleMisubRequest(context) {
         const headers = {
             'Content-Type': 'text/plain; charset=utf-8',
             'Cache-Control': 'no-store, no-cache',
+            'Profile-Update-Interval': '6',
         };
         Object.entries(cacheHeaders).forEach(([key, value]) => {
             headers[key] = value;
