@@ -256,6 +256,11 @@ export async function handleExternalProfilesRequest(
         if (!String(updated.name || '').trim())
             return createExternalError('profile_name_required', 'Profile name is required', 400);
         await storageAdapter.putProfile(updated);
+        // [新增] 当 Profile 发生配置更新时，主动物理清除旧节点缓存，防止防暴跌保护锁定旧订阅
+        try {
+            await storageAdapter.delete(`node_cache_profile_${updated.id}`);
+            if (updated.customId) await storageAdapter.delete(`node_cache_profile_${updated.customId}`);
+        } catch {}
         return createExternalSuccess(toExternalProfile(updated));
     }
 
