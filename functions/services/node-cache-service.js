@@ -19,7 +19,7 @@ const CACHE_CONFIG = {
 // A truncated upstream response can still contain a few valid nodes. Protect
 // a previously healthy large cache from being replaced by that partial result.
 const SHRINK_PROTECTION_MIN_CACHED_NODES = 10;
-const SHRINK_PROTECTION_MAX_RATIO = 0.3;
+const SHRINK_PROTECTION_MAX_RATIO = 0.1;
 
 export function isSuspiciousNodeCountDrop(previousCount, nextCount) {
     const previous = Number(previousCount);
