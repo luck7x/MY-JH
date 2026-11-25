@@ -214,22 +214,7 @@ export class ProcessorService {
             };
         }
 
-        // Handle built-in generation with optional templates
-        const builtinProxyContent = transformBuiltinSubscription(combinedNodeList, targetFormat, {
-            ...builtinOptions,
-            managedConfigUrl,
-        });
-
-        if (!builtinProxyContent) {
-            // Fallback to raw Base64 if generator fails
-            return {
-                content: base64EncodeUtf8(combinedNodeList),
-                contentType: 'text/plain; charset=utf-8',
-                headers: userInfoHeader ? { 'Subscription-Userinfo': userInfoHeader } : {},
-            };
-        }
-
-        let finalContent = builtinProxyContent;
+        let finalContent = null;
         let contentType = 'text/plain; charset=utf-8';
         const headers = userInfoHeader ? { 'Subscription-Userinfo': userInfoHeader } : {};
 
@@ -308,6 +293,23 @@ export class ProcessorService {
                 contentType = 'application/x-yaml; charset=utf-8';
                 headers['X-MiSub-Template-Mode'] = 'clash-yaml-profile';
             }
+        }
+
+        // 仅在未命中模板渲染时才执行内置生成器，避免双倍解析与 YAML 序列化消耗 CPU
+        if (!finalContent) {
+            const builtinProxyContent = transformBuiltinSubscription(combinedNodeList, targetFormat, {
+                ...builtinOptions,
+                managedConfigUrl,
+            });
+
+            if (!builtinProxyContent) {
+                return {
+                    content: base64EncodeUtf8(combinedNodeList),
+                    contentType: 'text/plain; charset=utf-8',
+                    headers: userInfoHeader ? { 'Subscription-Userinfo': userInfoHeader } : {},
+                };
+            }
+            finalContent = builtinProxyContent;
         }
 
         // Set proper content type for built-in formats if not set by template
