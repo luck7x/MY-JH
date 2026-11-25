@@ -118,6 +118,12 @@ async function refreshProfileSubscriptions(storageAdapter, env, profile) {
         });
     }
 
+    // 刷新订阅组时同步清除聚合节点缓存，确保客户端下次拉取立即拿到最新节点
+    try {
+        await storageAdapter.delete(`node_cache_profile_${profile.id}`);
+        if (profile.customId) await storageAdapter.delete(`node_cache_profile_${profile.customId}`);
+    } catch {}
+
     return {
         profile: toExternalProfile(profile),
         results,
