@@ -181,6 +181,77 @@ function mapRule(rule, ruleProviderMap) {
     return `${type},${rule.value},${rule.policy}`;
 }
 
+function formatYamlKey(key) {
+    return /^[A-Za-z0-9_-]+$/.test(key) ? key : JSON.stringify(key);
+}
+
+function formatYamlScalar(val) {
+    if (typeof val !== 'string') return JSON.stringify(val);
+    if (
+        val.length > 0 &&
+        val.length <= 120 &&
+        /^[A-Za-z0-9_.-]+$/.test(val) &&
+        !/^(?:true|false|null|yes|no|on|off|~|[+-]?(?:d+.?d*|.d+)(?:[eE][+-]?d+)?)$/i.test(val)
+    ) {
+        return val;
+    }
+    return JSON.stringify(val);
+}
+
+function formatYamlRule(rule) {
+    if (typeof rule !== 'string') return JSON.stringify(rule);
+    if (
+        rule.length > 0 &&
+        !/[\r\n"'\\]|:\s|\s#|^[\s\-?:,\[\]{}#&*!|>%@`]/.test(rule)
+    ) {
+        return rule;
+    }
+    return JSON.stringify(rule);
+}
+
+function fastDumpClashYaml(cfg) {
+    const lines = [];
+    for (const [k, v] of Object.entries(cfg)) {
+        if (v === undefined) continue;
+        const keyStr = formatYamlKey(k);
+        if (k === 'proxies' && Array.isArray(v)) {
+            lines.push('proxies:');
+            for (const p of v) {
+                lines.push(`  - ${JSON.stringify(p)}`);
+            }
+        } else if (k === 'proxy-groups' && Array.isArray(v)) {
+            lines.push('proxy-groups:');
+            for (const g of v) {
+                lines.push(`  - name: ${formatYamlScalar(g.name)}`);
+                for (const [gk, gv] of Object.entries(g)) {
+                    if (gk === 'name' || gv === undefined) continue;
+                    lines.push(`    ${formatYamlKey(gk)}: ${JSON.stringify(gv)}`);
+                }
+            }
+        } else if (k === 'rules' && Array.isArray(v)) {
+            lines.push('rules:');
+            for (const r of v) {
+                lines.push(`  - ${formatYamlRule(r)}`);
+            }
+        } else if (k === 'rule-providers' && v && typeof v === 'object') {
+            lines.push('rule-providers:');
+            for (const [rk, rv] of Object.entries(v)) {
+                if (rv === undefined) continue;
+                lines.push(`  ${formatYamlKey(rk)}: ${JSON.stringify(rv)}`);
+            }
+        } else if (k === 'dns' && v && typeof v === 'object') {
+            lines.push('dns:');
+            for (const [dk, dv] of Object.entries(v)) {
+                if (dv === undefined) continue;
+                lines.push(`  ${formatYamlKey(dk)}: ${JSON.stringify(dv)}`);
+            }
+        } else {
+            lines.push(`${keyStr}: ${JSON.stringify(v)}`);
+        }
+    }
+    return lines.join('\n') + '\n';
+}
+
 export function renderClashFromTemplateModel(model) {
     const normalizedModel = normalizeUnifiedTemplateModel(model);
 
@@ -326,13 +397,7 @@ export function renderClashFromTemplateModel(model) {
         },
     };
 
-    let yamlStr = yaml.dump(config, {
-        indent: 2,
-        lineWidth: -1,
-        noRefs: true,
-        quotingType: '"',
-        forceQuotes: false,
-    });
+    let yamlStr = fastDumpClashYaml(config);
     yamlStr = clashFix(yamlStr);
     return yamlStr;
 }
