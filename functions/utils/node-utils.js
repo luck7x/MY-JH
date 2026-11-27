@@ -426,8 +426,9 @@ export function sanitizeNodeForYaml(nodeUrl) {
         // We replace them with full-width equivalents or '★' for *
         const unsafeStartRegex = /^([*&!\[\]\{\},:?#%|>@\-])/;
         if (unsafeStartRegex.test(name)) {
+            // 保留标准 [前缀] 标签（渲染层统一使用引号转义，避免将 [vip1]/[手动] 误改为全角括号）
             if (/^\[[^\]]+\]/.test(name)) {
-                return name.replace(/^\[([^\]]+)\]/, '【$1】');
+                return name;
             }
             return name
                 .replace(/^[*]/, '★')
