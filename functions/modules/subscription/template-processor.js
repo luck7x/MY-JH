@@ -25,10 +25,23 @@ function resolveGroupFilters(model) {
             try {
                 const regex = new RegExp(filter, 'i');
                 const isFrontOrRegionGroup = group.name !== '🔗 链式落地' && group.name !== '代理分组' && group.name !== '漏网之鱼' && group.name !== 'AI';
+                const groupFlagMatch = String(group.name || '').match(/^([\u{1F1E6}-\u{1F1FF}]{2})/u);
+                const groupFlag = groupFlagMatch ? groupFlagMatch[1] : '';
                 proxyNames.forEach((name) => {
                     // [极速防死锁] 凡是链式落地节点，物理级排除在普通地区组与前置跳板组之外，无需复杂的正则负向回溯
                     if (isFrontOrRegionGroup && (name.includes('🔗') || name.includes('链式落地'))) {
                         return;
+                    }
+                    // [防跨国串组] 地区策略组若以国旗开头且节点也有首部国旗，强校验首部国旗一致（🇹🇼 组兼容 MiSub 的 🇨🇳 台湾节点）
+                    if (groupFlag) {
+                        const nodeFlagMatch = String(name || '').match(/^([\u{1F1E6}-\u{1F1FF}]{2})/u);
+                        if (nodeFlagMatch) {
+                            const nodeFlag = nodeFlagMatch[1];
+                            const flagMatches =
+                                nodeFlag === groupFlag ||
+                                (groupFlag === '🇹🇼' && nodeFlag === '🇨🇳');
+                            if (!flagMatches) return;
+                        }
                     }
                     if (regex.test(name)) {
                         currentMembers.add(name);
