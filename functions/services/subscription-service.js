@@ -1003,13 +1003,13 @@ export async function generateCombinedNodeList(
 
     // --- 阶段 3: 后置格式化与增强 (Post-Formatting & Enhancement) ---
 
-    // 3.1 YAML 兼容性净化
-    currentLines = currentLines.map((line) => sanitizeNodeForYaml(line));
-
-    // 3.2 最终智能化补齐 (Flag Emoji)
-    const finalLines = shouldKeepEmoji
+    // 3.1 最终智能化补齐 (Flag Emoji) —— 先于 YAML 起始字符净化，确保 `🇭🇰 [前缀] ...` 保留标准方括号
+    const emojiLines = shouldKeepEmoji
         ? currentLines.map((line) => addFlagEmoji(line))
         : currentLines;
+
+    // 3.2 YAML 兼容性净化
+    const finalLines = emojiLines.map((line) => sanitizeNodeForYaml(line));
 
     // --- 阶段 4: 结果拼装与返回 ---
     const finalNodeList = finalLines.join('\n');
