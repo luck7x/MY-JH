@@ -426,6 +426,9 @@ export function sanitizeNodeForYaml(nodeUrl) {
         // We replace them with full-width equivalents or '★' for *
         const unsafeStartRegex = /^([*&!\[\]\{\},:?#%|>@\-])/;
         if (unsafeStartRegex.test(name)) {
+            if (/^\[[^\]]+\]/.test(name)) {
+                return name.replace(/^\[([^\]]+)\]/, '【$1】');
+            }
             return name
                 .replace(/^[*]/, '★')
                 .replace(/^&/, '＆')
