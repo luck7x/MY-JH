@@ -709,18 +709,40 @@ export async function generateCombinedNodeList(
                 plusAsSpace: Boolean(sub?.plusAsSpace),
             });
             const customNodeName = typeof sub.name === 'string' ? sub.name.trim() : '';
-            if (customNodeName && !sub?.isFromSubProfile)
-                processedUrl = applyManualNodeName(processedUrl, customNodeName);
-
-            const nodeGroup = typeof sub.group === 'string' ? sub.group.trim() : '';
-            if (prependGroupName && nodeGroup && !skipPrefixDueToRenaming)
-                processedUrl = prependNodeName(processedUrl, nodeGroup);
-
-            const shouldAddPrefix =
-                shouldPrependManualNodes && !skipPrefixDueToRenaming && !sub?.isFromSubProfile;
-            const finalRawUrl = shouldAddPrefix
-                ? prependNodeName(processedUrl, manualNodePrefix)
-                : processedUrl;
+            const formatManualBracketName = (name) => {
+                const trimmed = String(name || '').trim();
+                if (!trimmed) return '[手动]';
+                if (/^(?:[\u{1F1E6}-\u{1F1FF}]{2}\s*)?\[手动\]/u.test(trimmed)) return trimmed;
+                const m = trimmed.match(/^([\u{1F1E6}-\u{1F1FF}]{2})\s*(.*)$/u);
+                if (m) return `${m[1]} [手动] ${m[2]}`.trim();
+                return `[手动] ${trimmed}`;
+            };
+            const extractFallbackNodeName = (urlStr) => {
+                if (urlStr.startsWith('vmess://')) {
+                    try {
+                        let b64 = urlStr.slice('vmess://'.length).split('#')[0];
+                        if (b64.includes('%')) b64 = decodeURIComponent(b64);
+                        b64 = b64.replace(/-/g, '+').replace(/_/g, '/');
+                        while (b64.length % 4 !== 0) b64 += '=';
+                        const bin = atob(b64);
+                        const bytes = new Uint8Array(bin.length);
+                        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                        const obj = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+                        if (obj?.ps) return String(obj.ps).trim();
+                    } catch {}
+                }
+                const idx = urlStr.lastIndexOf('#');
+                if (idx !== -1) {
+                    const frag = urlStr.slice(idx + 1);
+                    try { return decodeURIComponent(frag).trim(); } catch { return frag.trim(); }
+                }
+                return '';
+            };
+            let finalRawUrl = processedUrl;
+            if (!sub?.isFromSubProfile) {
+                const baseName = customNodeName || extractFallbackNodeName(processedUrl);
+                finalRawUrl = applyManualNodeName(processedUrl, formatManualBracketName(baseName));
+            }
 
             // [核心对齐] 对手动节点应用订阅源级转换（算子+过滤 + 组级诊断）
             const transformed = await applySubscriptionTransforms([finalRawUrl], sub);
