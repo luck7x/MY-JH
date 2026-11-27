@@ -874,9 +874,40 @@ function parseHostPort(value) {
  * @param {string} nodeName - 节点名称
  * @returns {string} 识别出的地区，如未识别返回"其他"
  */
+let _EMOJI_TO_REGION_CACHE = null;
+function getEmojiToRegionMap() {
+    if (_EMOJI_TO_REGION_CACHE) return _EMOJI_TO_REGION_CACHE;
+    const map = { '🇹🇼': '台湾' };
+    for (const [region, emoji] of Object.entries(REGION_EMOJI || {})) {
+        // 🇨🇳 同时用于中国/台湾（存在歧义），不走国旗短路，交由后续规则判定
+        if (emoji && emoji !== '🇨🇳' && !map[emoji]) {
+            map[emoji] = region;
+        }
+    }
+    _EMOJI_TO_REGION_CACHE = map;
+    return map;
+}
+
 export function extractNodeRegion(nodeName) {
     if (!nodeName || typeof nodeName !== 'string') {
         return '其他';
+    }
+
+    const trimmedName = nodeName.trim();
+
+    // [优先 1] 尊重节点首部已标注的明确国旗 Emoji（避免实测落地国被原名里的中转地名或假国名反向覆盖）
+    const leadingFlagMatch = trimmedName.match(/^([\u{1F1E6}-\u{1F1FF}]{2})/u);
+    if (leadingFlagMatch) {
+        const flagRegion = getEmojiToRegionMap()[leadingFlagMatch[1]];
+        if (flagRegion) {
+            return flagRegion;
+        }
+    }
+
+    // [优先 2] 若首部国旗缺失或存在歧义（如 🇨🇳），但命中标准化 `[前缀] <国家名>-...` 结构（如 `[LDC] 香港-加拿大...`），直接以首部真实国名为准
+    const leadingStdMatch = trimmedName.match(/^(?:[\u{1F1E6}-\u{1F1FF}]{2}\s*)?(?:\[[^\]]+\]\s*)+([\u4e00-\u9fa5]{2,8})(?=[-\s]|$)/u);
+    if (leadingStdMatch && Object.prototype.hasOwnProperty.call(REGION_KEYWORDS, leadingStdMatch[1])) {
+        return leadingStdMatch[1];
     }
 
     const normalizedNodeName = nodeName.toLowerCase();
