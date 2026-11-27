@@ -954,12 +954,8 @@ export async function generateCombinedNodeList(
         .map((line) => line.trim())
         .filter(Boolean);
 
-    // 去重，保留原始顺序中的第一次出现
+    // 去重，保留原始顺序中的第一次出现（保留首部国旗供算子链准确识别地区，阶段 3 再按 shouldKeepEmoji 统一处理）
     let currentLines = [...new Set(rawCombinedLines)];
-
-    if (!shouldKeepEmoji) {
-        currentLines = currentLines.map((line) => removeFlagEmoji(line));
-    }
 
     // --- 阶段 2: 核心转换引擎 (Logic Transformation Engine) ---
     // 优先级: 订阅组 Operator Chain > 全局默认 Operator Chain > 旧版 Node Pipeline (桥接模式)
@@ -1003,10 +999,10 @@ export async function generateCombinedNodeList(
 
     // --- 阶段 3: 后置格式化与增强 (Post-Formatting & Enhancement) ---
 
-    // 3.1 最终智能化补齐 (Flag Emoji) —— 先于 YAML 起始字符净化，确保 `🇭🇰 [前缀] ...` 保留标准方括号
+    // 3.1 最终智能化补齐/移除 (Flag Emoji) —— 在算子链之后、YAML 起始字符净化之前统一处理
     const emojiLines = shouldKeepEmoji
         ? currentLines.map((line) => addFlagEmoji(line))
-        : currentLines;
+        : currentLines.map((line) => removeFlagEmoji(line));
 
     // 3.2 YAML 兼容性净化
     const finalLines = emojiLines.map((line) => sanitizeNodeForYaml(line));
